@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>filmography-app</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#appView">Skip to content</a>
+
+  <div class="page-shell">
+    <section class="login-screen" id="loginScreen">
+      <div class="shader-bg login-bg" aria-hidden="true">
+        <span class="orb orb-a"></span>
+        <span class="orb orb-b"></span>
+        <span class="orb orb-c"></span>
+        <canvas id="noiseCanvas"></canvas>
+      </div>
+
+      <div class="login-card">
+        <div class="login-inner">
+          <p class="eyebrow">Movie Access Portal</p>
+          <h1>Cinematic Archive</h1>
+          <p class="hero-text">
+            Log in to explore the movie collection. Check the admin option to access editing tools; leave it unchecked for the client view.
+          </p>
+
+          <form id="loginForm" class="login-form">
+            <label>
+              <span>Name</span>
+              <input type="text" id="userName" placeholder="Enter your name" required />
+            </label>
+
+            <label class="checkbox-row">
+              <input type="checkbox" id="adminCheck" />
+              <span>Login as Admin</span>
+            </label>
+
+            <button type="submit" class="liquid-btn login-btn">Check</button>
+            <p id="loginMessage" class="form-message" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-view hidden" id="appView">
+      <header class="hero-wrap compact-hero">
+        <div class="shader-bg" aria-hidden="true">
+          <span class="orb orb-a"></span>
+          <span class="orb orb-b"></span>
+          <span class="orb orb-c"></span>
+        </div>
+
+        <div class="hero-frame">
+          <div class="hero-inner">
+            <main class="hero-copy">
+              <p class="eyebrow">Dynamic JSON CRUD Interface</p>
+              <h1>Cinematic Archive</h1>
+              <p class="hero-text" id="welcomeText">
+                Welcome. You are viewing the movie collection.
+              </p>
+              <div class="hero-status role-line">
+                <span class="ping-wrap">
+                  <span class="ping"></span>
+                  <span class="dot"></span>
+                </span>
+                <span id="roleText">Client mode active</span>
+              </div>
+              <div class="hero-actions action-stack">
+                <button class="liquid-btn" id="focusFormBtn" type="button">Open Collection</button>
+                <button class="ghost-btn" id="logoutBtn" type="button">Log Out</button>
+              </div>
+            </main>
+          </div>
+        </div>
+      </header>
+
+      <section class="stats-grid" aria-label="Movie statistics">
+        <article class="stat-card">
+          <p>Total Movies</p>
+          <strong id="totalMovies">0</strong>
+        </article>
+        <article class="stat-card">
+          <p>Average Rating</p>
+          <strong id="avgRating">0.0</strong>
+        </article>
+        <article class="stat-card">
+          <p>Top Genre</p>
+          <strong id="topGenre">-</strong>
+        </article>
+        <article class="stat-card">
+          <p>Languages</p>
+          <strong id="languageCount">0</strong>
+        </article>
+      </section>
+
+      <main id="app" class="app-grid client-mode">
+        <section class="panel panel-form admin-only" id="adminPanel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Create / Update</p>
+              <h2>Movie Form</h2>
+            </div>
+            <button type="button" class="ghost-btn" id="resetBtn">Reset</button>
+          </div>
+
+          <form id="movieForm" novalidate>
+            <input type="hidden" id="movieId" />
+
+            <div class="form-grid">
+              <label>
+                <span>Title</span>
+                <input type="text" id="title" required />
+              </label>
+              <label>
+                <span>Director</span>
+                <input type="text" id="director" required />
+              </label>
+              <label>
+                <span>Genre</span>
+                <select id="genre" required>
+                  <option value="">Select a genre</option>
+                  <option>Action</option>
+                  <option>Drama</option>
+                  <option>Comedy</option>
+                  <option>Sci-Fi</option>
+                  <option>Thriller</option>
+                  <option>Animation</option>
+                  <option>Romance</option>
+                  <option>Adventure</option>
+                  <option>Fantasy</option>
+                  <option>Horror</option>
+                </select>
+              </label>
+              <label>
+                <span>Year</span>
+                <input type="number" id="year" min="1900" max="2026" required />
+              </label>
+              <label>
+                <span>Rating</span>
+                <input type="number" id="rating" min="0" max="10" step="0.1" required />
+              </label>
+              <label>
+                <span>Duration (min)</span>
+                <input type="number" id="duration" min="40" max="300" required />
+              </label>
+              <label>
+                <span>Language</span>
+                <input type="text" id="language" required />
+              </label>
+              <label>
+                <span>Country</span>
+                <input type="text" id="country" required />
+              </label>
+            </div>
+
+            <label class="full-width">
+              <span>Actors (comma separated)</span>
+              <textarea id="actors" rows="3" placeholder="Actor 1, Actor 2, Actor 3" required></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button type="submit" class="liquid-btn">Save Movie</button>
+              <button type="button" class="ghost-btn" id="downloadBtn">Export JSON</button>
+            </div>
+            <p id="formMessage" class="form-message" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="panel panel-table">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Browse / Manage</p>
+              <h2>Movie Collection</h2>
+            </div>
+            <div class="table-tools">
+              <span class="mode-pill" id="modePill">Client mode</span>
+              <input type="search" id="searchInput" placeholder="Search by title, director, or genre..." aria-label="Search movies" />
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Director</th>
+                  <th>Genre</th>
+                  <th>Year</th>
+                  <th>Rating</th>
+                  <th class="admin-actions-head">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="movieTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <script src="./script.js" defer></script>
+</body>
+</html>

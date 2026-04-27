@@ -1,0 +1,100 @@
+{
+  "films": [
+    {
+      "id": 1,
+      "title": "Inception",
+      "director": "Christopher Nolan",
+      "genre": "Sci-Fi",
+      "year": 2010,
+      "rating": 8.8,
+      "actors": ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Elliot Page"],
+      "duration": 148,
+      "language": "English",
+      "country": "USA"
+    },
+    {
+      "id": 2,
+      "title": "The Dark Knight",
+      "director": "Christopher Nolan",
+      "genre": "Action",
+      "year": 2008,
+      "rating": 9.0,
+      "actors": ["Christian Bale", "Heath Ledger", "Aaron Eckhart"],
+      "duration": 152,
+      "language": "English",
+      "country": "USA"
+    },
+    {
+      "id": 3,
+      "title": "Interstellar",
+      "director": "Christopher Nolan",
+      "genre": "Sci-Fi",
+      "year": 2014,
+      "rating": 8.7,
+      "actors": ["Matthew McConaughey", "Anne Hathaway", "Jessica Chastain"],
+      "duration": 169,
+      "language": "English",
+      "country": "USA"
+    },
+    {
+      "id": 4,
+      "title": "Parasite",
+      "director": "Bong Joon-ho",
+      "genre": "Thriller",
+      "year": 2019,
+      "rating": 8.5,
+      "actors": ["Song Kang-ho", "Lee Sun-kyun", "Cho Yeo-jeong"],
+      "duration": 132,
+      "language": "Korean",
+      "country": "South Korea"
+    },
+    {
+      "id": 5,
+      "title": "Gladiator",
+      "director": "Ridley Scott",
+      "genre": "Action",
+      "year": 2000,
+      "rating": 8.5,
+      "actors": ["Russell Crowe", "Joaquin Phoenix", "Connie Nielsen"],
+      "duration": 155,
+      "language": "English",
+      "country": "USA"
+    },
+    {
+      "id": 6,
+      "title": "The Shawshank Redemption",
+      "director": "Frank Darabont",
+      "genre": "Drama",
+      "year": 1994,
+      "rating": 9.3,
+      "actors": ["Tim Robbins", "Morgan Freeman", "Bob Gunton"],
+      "duration": 142,
+      "language": "English",
+      "country": "USA"
+    },
+    {
+      "id": 7,
+      "title": "Spirited Away",
+      "director": "Hayao Miyazaki",
+      "genre": "Animation",
+      "year": 2001,
+      "rating": 8.6,
+      "actors": ["Rumi Hiiragi", "Miyu Irino", "Mari Natsuki"],
+      "duration": 125,
+      "language": "Japanese",
+      "country": "Japan"
+    },
+    {
+      "id": 8,
+      "title": "Titanic",
+      "director": "James Cameron",
+      "genre": "Romance",
+      "year": 1997,
+      "rating": 7.9,
+      "actors": ["Leonardo DiCaprio", "Kate Winslet", "Billy Zane"],
+      "duration": 195,
+      "language": "English",
+      "country": "USA"
+    }
+  ]
+}
