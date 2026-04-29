@@ -14,7 +14,28 @@ const state = {
   filtered: [],
   editingId: null,
   role: 'client',
-  userName: 'Guest'
+  userName: 'Guest',
+  schema: null,
+  validateDataset: null,
+  validateMovie: null
+};
+
+const movieItemSchema = {
+  type: 'object',
+  required: ['id', 'title', 'director', 'genre', 'year', 'rating', 'actors', 'duration', 'language', 'country'],
+  additionalProperties: false,
+  properties: {
+    id: { type: 'integer', minimum: 1 },
+    title: { type: 'string', minLength: 1 },
+    director: { type: 'string', minLength: 3 },
+    genre: { type: 'string', enum: ['Action', 'Drama', 'Comedy', 'Sci-Fi', 'Thriller', 'Animation', 'Romance', 'Adventure', 'Fantasy', 'Horror'] },
+    year: { type: 'integer', minimum: 1900, maximum: 2026 },
+    rating: { type: 'number', minimum: 0, maximum: 10 },
+    actors: { type: 'array', minItems: 1, items: { type: 'string', minLength: 2 } },
+    duration: { type: 'integer', minimum: 40, maximum: 300 },
+    language: { type: 'string', minLength: 2 },
+    country: { type: 'string', minLength: 2 }
+  }
 };
 
 const loginScreen = document.getElementById('loginScreen');
@@ -51,18 +72,68 @@ const fields = {
 
 async function init() {
   initNoise();
+  await loadSchema();
+  await loadData();
+  renderTable();
+  renderStats();
+}
+
+async function loadSchema() {
+  try {
+    const response = await fetch('./schema.json');
+    if (!response.ok) throw new Error('Could not load schema.json');
+    state.schema = await response.json();
+  } catch (error) {
+    console.error('Failed to load schema:', error);
+    state.schema = null;
+  }
+
+  const AjvConstructor = window.Ajv2020 || window.ajv2020;
+  if (AjvConstructor && typeof AjvConstructor === 'function') {
+    const ajv = new AjvConstructor({ allErrors: true, strict: false });
+    if (state.schema) {
+      state.validateDataset = ajv.compile(state.schema);
+      state.validateMovie = ajv.compile(state.schema.properties.films.items);
+    } else {
+      // Fallback to hardcoded schema
+      state.validateMovie = ajv.compile(movieItemSchema);
+      state.validateDataset = ajv.compile({
+        type: 'object',
+        required: ['films'],
+        additionalProperties: false,
+        properties: {
+          films: {
+            type: 'array',
+            minItems: 1,
+            items: movieItemSchema
+          }
+        }
+      });
+    }
+  }
+}
+
+async function loadData() {
+  let sourceData;
   try {
     const response = await fetch('./data.json');
     if (!response.ok) throw new Error('Could not load data.json');
-    const data = await response.json();
-    state.movies = Array.isArray(data.films) ? data.films : [...fallbackMovies];
+    sourceData = await response.json();
   } catch (error) {
-    state.movies = [...fallbackMovies];
+    sourceData = { films: [...fallbackMovies] };
   }
 
+  if (state.validateDataset) {
+    const valid = state.validateDataset(sourceData);
+    if (!valid) {
+      console.warn('Schema validation errors:', state.validateDataset.errors);
+      state.movies = [...fallbackMovies];
+      return;
+    }
+  }
+
+  state.movies = Array.isArray(sourceData.films) ? sourceData.films : [...fallbackMovies];
   state.filtered = [...state.movies];
-  renderTable();
-  renderStats();
 }
 
 function enterApp(role, userName) {
@@ -91,15 +162,6 @@ function logout() {
   loginScreen.classList.remove('hidden');
 }
 
-function validateMovie(movie) {
-  if (!movie.title || !movie.director || !movie.genre || !movie.language || !movie.country) return 'Please fill in all required text fields.';
-  if (!Number.isInteger(movie.year) || movie.year < 1900 || movie.year > 2026) return 'Year must be between 1900 and 2026.';
-  if (isNaN(movie.rating) || movie.rating < 0 || movie.rating > 10) return 'Rating must be between 0 and 10.';
-  if (!Number.isInteger(movie.duration) || movie.duration < 40 || movie.duration > 300) return 'Duration must be between 40 and 300 minutes.';
-  if (!movie.actors.length) return 'Please enter at least one actor.';
-  return '';
-}
-
 function getFormData() {
   return {
     id: fields.id.value ? Number(fields.id.value) : generateNextId(),
@@ -117,6 +179,13 @@ function getFormData() {
 
 function generateNextId() {
   return state.movies.length ? Math.max(...state.movies.map(m => m.id)) + 1 : 1;
+}
+
+function getAjvErrors(errors) {
+  if (!errors || !errors.length) return 'Invalid data according to schema.';
+  const first = errors[0];
+  const path = first.instancePath ? first.instancePath.replaceAll('/', ' > ').replace(/^ > /, '') : 'field';
+  return `${path}: ${first.message}`;
 }
 
 function renderTable(movies = state.filtered) {
@@ -175,20 +244,62 @@ form.addEventListener('submit', (event) => {
     return;
   }
 
-  const movie = getFormData();
-  const error = validateMovie(movie);
-  if (error) {
-    formMessage.textContent = error;
+  // Pre-coercion presence check — catches blanks that Number('') would turn into 0
+  const rawChecks = [
+    { field: fields.title,    label: 'Title' },
+    { field: fields.director, label: 'Director' },
+    { field: fields.genre,    label: 'Genre' },
+    { field: fields.year,     label: 'Year' },
+    { field: fields.rating,   label: 'Rating' },
+    { field: fields.duration, label: 'Duration' },
+    { field: fields.language, label: 'Language' },
+    { field: fields.country,  label: 'Country' },
+    { field: fields.actors,   label: 'Actors' }
+  ];
+  for (const { field, label } of rawChecks) {
+    if (!field.value.trim()) {
+      formMessage.textContent = `${label} is required.`;
+      field.focus();
+      return;
+    }
+  }
+
+  const actorList = fields.actors.value.split(',').map(a => a.trim()).filter(Boolean);
+  if (actorList.length === 0 || actorList.some(a => a.length < 2)) {
+    formMessage.textContent = 'Actors: provide at least one name (min 2 characters each).';
+    fields.actors.focus();
     return;
+  }
+
+  const movie = getFormData();
+
+  if (state.validateMovie) {
+    const validMovie = state.validateMovie(movie);
+    if (!validMovie) {
+      formMessage.textContent = 'Schema validation failed: ' + getAjvErrors(state.validateMovie.errors);
+      return;
+    }
+  }
+
+  const nextMovies = state.editingId !== null
+    ? state.movies.map(m => (m.id === state.editingId ? movie : m))
+    : [...state.movies, movie];
+
+  if (state.validateDataset) {
+    const validDataset = state.validateDataset({ films: nextMovies });
+    if (!validDataset) {
+      formMessage.textContent = 'Dataset validation failed: ' + getAjvErrors(state.validateDataset.errors);
+      return;
+    }
   }
 
   if (state.editingId !== null) {
     const index = state.movies.findIndex(m => m.id === state.editingId);
     state.movies[index] = movie;
-    formMessage.textContent = 'Movie updated successfully.';
+    formMessage.textContent = 'Movie updated successfully and validated by schema.';
   } else {
     state.movies.push(movie);
-    formMessage.textContent = 'Movie added successfully.';
+    formMessage.textContent = 'Movie added successfully and validated by schema.';
   }
 
   state.filtered = [...state.movies];
@@ -220,7 +331,12 @@ downloadBtn.addEventListener('click', () => {
     formMessage.textContent = 'Only admin mode can export updated data.';
     return;
   }
-  const blob = new Blob([JSON.stringify({ films: state.movies }, null, 2)], { type: 'application/json' });
+  const payload = { films: state.movies };
+  if (state.validateDataset && !state.validateDataset(payload)) {
+    formMessage.textContent = 'Export blocked because data does not match schema.';
+    return;
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -259,7 +375,12 @@ window.deleteMovie = function (id) {
   if (state.role !== 'admin') return;
   const confirmed = confirm('Delete this movie?');
   if (!confirmed) return;
-  state.movies = state.movies.filter(m => m.id !== id);
+  const nextMovies = state.movies.filter(m => m.id !== id);
+  if (state.validateDataset && !state.validateDataset({ films: nextMovies })) {
+    formMessage.textContent = 'Delete blocked because dataset would violate schema.';
+    return;
+  }
+  state.movies = nextMovies;
   state.filtered = [...state.movies];
   if (state.editingId === id) resetForm(false);
   renderTable();
